@@ -1,0 +1,15 @@
+{
+  "name": "daeng-hs26",
+  "image": "mcr.microsoft.com/devcontainers/python:3.12",
+  "postCreateCommand": "curl -LsSf https://astral.sh/uv/install.sh | sh && export PATH=$HOME/.local/bin:$PATH && uv sync",
+  "forwardPorts": [2718, 8080],
+  "portsAttributes": {
+    "2718": { "label": "marimo" },
+    "8080": { "label": "dbt docs" }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": ["ms-python.python", "marimo-team.vscode-marimo"]
+    }
+  }
+}

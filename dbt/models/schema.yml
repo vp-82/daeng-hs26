@@ -1,0 +1,26 @@
+version: 2
+
+models:
+  - name: stg_service_days
+    description: "Grain: one row = one service_id x one date it runs. Dates come from calendar.txt."
+    columns:
+      - name: service_id
+        tests: [not_null]
+      - name: service_day
+        tests: [not_null]
+
+  - name: stg_trips
+    description: "Grain: one row = one trip. If this test goes red, everything downstream is wrong."
+    columns:
+      - name: trip_id
+        tests: [unique, not_null]
+
+  - name: trips_per_route_day
+    description: "Grain: one row = one route x one service day."
+    columns:
+      - name: service_day
+        tests: [not_null]
+      - name: route
+        tests: [not_null]
+      - name: trips
+        tests: [not_null]

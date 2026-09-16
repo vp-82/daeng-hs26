@@ -1,0 +1,7 @@
+daeng:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: ../daeng.duckdb
+      threads: 1

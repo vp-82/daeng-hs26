@@ -1,0 +1,4 @@
+service_id,monday,tuesday,wednesday,thursday,friday,saturday,sunday,start_date,end_date
+TAEGLICH,1,1,1,1,1,1,1,20260914,20260915
+WERKTAG,1,1,1,1,1,0,0,20260914,20260915
+WOCHENENDE,0,0,0,0,0,1,1,20260914,20260915

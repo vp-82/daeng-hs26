@@ -1,0 +1,11 @@
+name: daeng
+version: "1.0"
+profile: daeng
+
+model-paths: ["models"]
+target-path: "target"
+clean-targets: ["target", "dbt_packages"]
+
+models:
+  daeng:
+    +materialized: table

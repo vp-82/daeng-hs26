@@ -1,0 +1,13 @@
+[project]
+name = "daeng-hs26"
+version = "1.0.0"
+description = "ZHAW Data Engineering practice class, session 1"
+requires-python = ">=3.11"
+dependencies = [
+    "duckdb>=1.1",
+    "marimo>=0.9",
+    "pandas>=2.0",
+    "dbt-core>=1.8",
+    "dbt-duckdb>=1.8",
+    "jupyterlab>=4.0",
+]

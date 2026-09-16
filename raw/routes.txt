@@ -1,0 +1,7 @@
+route_id,route_short_name,route_long_name,route_type
+IC1,IC 1,Zurich HB - Olten - Bern,2
+IR75,IR 75,Zurich HB - Zug - Luzern,2
+S3,S 3,Zurich HB - Thalwil,2
+S5,S 5,Zurich HB - Uster - Wetzikon ZH,2
+S7,S 7,Zurich HB - Winterthur,2
+S15,S 15,Zurich HB - Rapperswil,2

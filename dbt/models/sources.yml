@@ -1,0 +1,12 @@
+version: 2
+
+sources:
+  - name: gtfs
+    description: The frozen GTFS slice in raw/. Read directly from the text files.
+    config:
+      external_location: "read_csv('../raw/{name}.txt', header=true)"
+    tables:
+      - name: trips
+      - name: routes
+      - name: calendar
+      - name: stop_times

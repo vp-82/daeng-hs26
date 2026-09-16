@@ -1,0 +1,10 @@
+__pycache__/
+.venv/
+*.duckdb
+dbt/target/
+dbt/logs/
+dbt/dbt_packages/
+.ipynb_checkpoints/
+data/
+__marimo__/
+dbt/.user.yml
