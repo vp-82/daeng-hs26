@@ -24,11 +24,7 @@ import zipfile
 
 import duckdb
 
-DEFAULT_URL = (
-    "https://data.opentransportdata.swiss/dataset/"
-    "3d2c18f9-9ef1-463f-a249-5c67604efd74/resource/"
-    "940f970d-1ab6-4320-9c7e-f8dc5a2af48d/download/gtfs_fp2026_20260729.zip"
-)
+DEFAULT_URL = "https://data.opentransportdata.swiss/dataset/timetable-2026-gtfs2020/permalink"
 FILES = ["stop_times.txt", "trips.txt", "routes.txt", "calendar.txt", "stops.txt"]
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -44,13 +40,15 @@ def download(url: str, target: pathlib.Path) -> None:
         print(f"zip already present: {target} ({mb(target)})")
         return
     print(f"downloading {url}")
-
-    def report(blocks, block_size, total):
-        done = blocks * block_size / 1e6
-        sys.stdout.write(f"\r  {done:,.0f} MB" + (f" of {total / 1e6:,.0f} MB" if total > 0 else ""))
-        sys.stdout.flush()
-
-    urllib.request.urlretrieve(url, target, reporthook=report)
+    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (daeng-hs26 course script)"})
+    with urllib.request.urlopen(req) as resp, open(target, "wb") as out:
+        total = int(resp.headers.get("Content-Length") or 0)
+        done = 0
+        while chunk := resp.read(1 << 20):
+            out.write(chunk)
+            done += len(chunk)
+            sys.stdout.write(f"\r  {done / 1e6:,.0f} MB" + (f" of {total / 1e6:,.0f} MB" if total else ""))
+            sys.stdout.flush()
     print(f"\n  saved {target} ({mb(target)})")
 
 
