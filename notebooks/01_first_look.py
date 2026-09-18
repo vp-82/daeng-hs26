@@ -21,18 +21,23 @@ def _():
     trips = table("trips")
     stop_times = table("stop_times")
     calendar = table("calendar")
-    return ROOT, calendar, con, mo, routes, stop_times, trips
+
+    def sql(query):
+        return con.execute(query).df()
+    return ROOT, calendar, mo, routes, sql, stop_times, trips
 
 
 @app.cell
 def _(mo):
     mo.md("""
-    # How many trips does each route run per day?
+    # Tutorial notebook
 
-    The cell above loads the four files in `raw/` as tables named
-    `routes`, `trips`, `stop_times` and `calendar`. Every query below uses these names.
+    This notebook belongs to `TUTORIAL.md` in the repository. The step numbers are the same.
 
-    Before counting anything, look at what one row is.
+    The cell above loads the four files in `raw/` as tables called `routes`, `trips`,
+    `stop_times` and `calendar`, and defines `sql(...)`, which runs a query and shows the result.
+
+    To run a cell: click into it and press **Ctrl+Enter** (Mac: **Cmd+Enter**).
     """)
     return
 
@@ -40,27 +45,54 @@ def _(mo):
 @app.cell
 def _(mo):
     mo.md("""
-    ## 1. One trip in stop_times
+    # Part 2. Look at the data
     """)
     return
 
 
 @app.cell
-def _(con, stop_times):
-    con.execute("""
-        SELECT trip_id, stop_sequence, departure_time, stop_id
+def _(mo):
+    mo.md("""
+    ### Step 2.1  A whole table
+    """)
+    return
+
+
+@app.cell
+def _(sql):
+    sql("SELECT * FROM routes")
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md("""
+    ### Step 2.2  The first rows of a big table
+    """)
+    return
+
+
+@app.cell
+def _(sql):
+    sql("SELECT * FROM trips LIMIT 5")
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md("""
+    ### Step 2.3  Only the rows you want
+    """)
+    return
+
+
+@app.cell
+def _(sql):
+    sql("""
+        SELECT *
         FROM stop_times
         WHERE trip_id = 'IC1.001'
         ORDER BY stop_sequence
-    """).df()
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md("""
-    Four rows, one trip. `stop_times` has **one row per stop**. Counting its rows
-    counts stops, not trips.
     """)
     return
 
@@ -68,7 +100,126 @@ def _(mo):
 @app.cell
 def _(mo):
     mo.md("""
-    ## 2. Where the day comes from
+    ### Step 2.4  How many rows
+    """)
+    return
+
+
+@app.cell
+def _(sql):
+    sql("SELECT COUNT(*) AS rows FROM trips")
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md("""
+    ### Step 2.5  How many rows per group
+    """)
+    return
+
+
+@app.cell
+def _(sql):
+    sql("""
+        SELECT route_id, COUNT(*) AS rows
+        FROM trips
+        GROUP BY route_id
+        ORDER BY route_id
+    """)
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md("""
+    ### Step 2.6  Two tables together
+    """)
+    return
+
+
+@app.cell
+def _(sql):
+    sql("""
+        SELECT t.trip_id, t.route_id, r.route_short_name
+        FROM trips t
+        JOIN routes r ON r.route_id = t.route_id
+        LIMIT 5
+    """)
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md("""
+    # Part 3. Two answers to one question
+    """)
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md("""
+    ### Step 3.1  Count with stop_times
+    """)
+    return
+
+
+@app.cell
+def _(sql):
+    sql("""
+        SELECT r.route_short_name AS route, COUNT(*) AS trips
+        FROM stop_times st
+        JOIN trips t  ON t.trip_id = st.trip_id
+        JOIN routes r ON r.route_id = t.route_id
+        GROUP BY route
+        ORDER BY route
+    """)
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md("""
+    ### Step 3.2  Count with trips only
+    """)
+    return
+
+
+@app.cell
+def _(sql):
+    sql("""
+        SELECT r.route_short_name AS route, COUNT(*) AS trips
+        FROM trips t
+        JOIN routes r ON r.route_id = t.route_id
+        GROUP BY route
+        ORDER BY route
+    """)
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md("""
+    ### Step 3.3  Which one is right?
+
+    Go back to Step 2.3. One trip, four rows. Now look at IC 1 in 3.1 and 3.2.
+    """)
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md("""
+    # Part 4. Per day
+    """)
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md("""
+    ### Step 4.1  The only file with dates
     """)
     return
 
@@ -82,54 +233,18 @@ def _(calendar):
 @app.cell
 def _(mo):
     mo.md("""
-    This is the only place in the feed with a date. A trip has a `service_id`, and
-    `calendar` says on which weekdays that service runs, between `start_date` and `end_date`.
-    """)
-    return
+    ### Step 4.2  One row per service and date
 
-
-@app.cell
-def _(mo):
-    mo.md("""
-    ## 3. Times that are not clock times
-    """)
-    return
-
-
-@app.cell
-def _(con, stop_times):
-    con.execute("""
-        SELECT trip_id, stop_sequence, departure_time
-        FROM stop_times
-        WHERE departure_time >= '24:'
-        ORDER BY trip_id, stop_sequence
-    """).df()
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md("""
-    24:17:00 means 17 minutes past midnight, on the service day that started the
-    evening before. These values are text. Converting them to a clock time fails.
-    """)
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md("""
-    ## 4. One row per service and day
-
-    The next cell turns `calendar` into a table `service_days` with one row per
-    `service_id` and each date it runs. The code is hidden, you do not need to read it.
+    The next cell turns `calendar` into a table `service_days`. Its code is hidden.
+    You do not need to read it, only to know that the table exists.
     """)
     return
 
 
 @app.cell(hide_code=True)
-def _(calendar, con):
-    service_days = con.execute("""
+def _(calendar, sql):
+    _ = calendar
+    service_days = sql("""
         SELECT c.service_id, strftime(d.day, '%Y-%m-%d') AS service_day
         FROM calendar c,
              LATERAL (
@@ -148,7 +263,7 @@ def _(calendar, con):
                 ELSE c.saturday
               END = 1
         ORDER BY service_day, service_id
-    """).df()
+    """)
     service_days
     return (service_days,)
 
@@ -156,42 +271,21 @@ def _(calendar, con):
 @app.cell
 def _(mo):
     mo.md("""
-    WOCHENENDE is missing. The feed covers weekdays only, so a weekend-only service
-    runs on no day in it. That is correct, not missing data.
+    ### Step 4.3  The answer
     """)
     return
 
 
 @app.cell
-def _(mo):
-    mo.md("""
-    ## 5. The answer
-
-    One row = one route on one day. Trips are counted in `trips`. `stop_times` is not used.
-    """)
-    return
-
-
-@app.cell
-def _(con, routes, service_days, trips):
-    answer = con.execute("""
+def _(service_days, sql):
+    _ = service_days
+    sql("""
         SELECT sd.service_day, r.route_short_name AS route, COUNT(*) AS trips
         FROM trips t
         JOIN routes r        ON r.route_id = t.route_id
         JOIN service_days sd ON sd.service_id = t.service_id
-        GROUP BY 1, 2
-        ORDER BY 1, 2
-    """).df()
-    answer
-    return (answer,)
-
-
-@app.cell
-def _(answer, mo):
-    mo.md(f"""
-    **{len(answer)} rows. Routes present: {', '.join(sorted(answer['route'].unique()))}.**
-
-    IR 75 is 17 on every day. Remember that number.
+        GROUP BY sd.service_day, route
+        ORDER BY sd.service_day, route
     """)
     return
 
@@ -199,39 +293,30 @@ def _(answer, mo):
 @app.cell
 def _(mo):
     mo.md("""
-    ## 6. What changed in the feed
+    # Part 6. The data changes
 
-    Run this after `git merge origin/feat/day-three`. The folder `out/main/` still
-    holds the feed as it was before the merge. EXCEPT returns the rows that are new.
+    Run these two cells only after Step 6.2 in the tutorial (`git merge`).
+    Before the merge they are empty.
     """)
     return
 
 
 @app.cell
-def _(ROOT, con, trips):
-    con.execute(f"""
+def _(ROOT, sql):
+    sql(f"""
         SELECT * FROM trips
         EXCEPT
         SELECT * FROM read_csv('{ROOT}/out/main/trips.txt', header=true)
-    """).df()
+    """)
     return
 
 
 @app.cell
-def _(ROOT, calendar, con):
-    con.execute(f"""
+def _(ROOT, sql):
+    sql(f"""
         SELECT * FROM calendar
         EXCEPT
         SELECT * FROM read_csv('{ROOT}/out/main/calendar.txt', header=true)
-    """).df()
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md("""
-    Before the merge both tables are empty. After it: one new trip on IR 75, and
-    the calendar now ends on Wednesday instead of Tuesday. That is the whole change.
     """)
     return
 
