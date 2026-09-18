@@ -250,6 +250,8 @@ IC1.005      IC1             IC 1
 
 That is all the SQL you need: SELECT, WHERE, COUNT, GROUP BY, JOIN.
 
+There are four kinds of JOIN. The one above, plain `JOIN`, keeps only rows that have a match in both tables. Appendix A at the end shows the other three on a table small enough to see every row. Read it now or after Part 4, both work.
+
 ---
 
 ## Part 3. Two answers to one question
@@ -652,3 +654,187 @@ git checkout notebooks/
 | 1 | all of it ran on your laptop from one lockfile | uv |
 
 **The habit:** before you count anything, say what one row of the table is.
+
+---
+
+## Appendix A. The four joins
+
+Open the notebook `notebooks/03_joins.py`:
+
+```
+uv run marimo edit notebooks/03_joins.py
+```
+
+### Step A.1 Two small tables
+
+**Run the first two cells**
+
+**You should see**
+
+```
+line
+IC 1
+ S 3
+S 15
+```
+
+```
+line journey
+IC 1      j1
+IC 1      j2
+ S 3      j3
+S 99      j4
+```
+
+**What it means** `lines` has three lines. `journeys` has four journeys, each with the line it belongs to. Two things are deliberately wrong: S 15 has no journey, and journey j4 belongs to a line S 99 that does not exist in `lines`. Every join below treats these two cases differently. In the outputs, an empty cell means NULL: no match on that side.
+
+### Step A.2 INNER JOIN
+
+**Run this cell**
+
+```sql
+SELECT l.line, j.journey
+FROM lines l
+INNER JOIN journeys j ON j.line = l.line
+```
+
+**You should see**
+
+```
+line journey
+IC 1      j1
+IC 1      j2
+ S 3      j3
+```
+
+**What it means** Only rows with a match on both sides. S 15 is gone (no journey), j4 is gone (no line). Plain `JOIN` means `INNER JOIN`. This is what Step 2.6, 3.2 and 4.3 use.
+
+### Step A.3 LEFT JOIN
+
+**Run this cell**
+
+```sql
+SELECT l.line, j.journey
+FROM lines l
+LEFT JOIN journeys j ON j.line = l.line
+```
+
+**You should see**
+
+```
+line journey
+IC 1      j1
+IC 1      j2
+S 15
+ S 3      j3
+```
+
+**What it means** Every row of the left table (`lines`) is kept. Where there is a match, the journey is attached. Where there is none, the journey column is empty. S 15 is back, with nothing next to it. j4 is still gone, it is on the right side and has no match.
+
+**Check** Which side is "left"? (The table named after `FROM`.)
+
+### Step A.4 RIGHT JOIN
+
+**Run this cell**
+
+```sql
+SELECT l.line, j.line AS journey_line, j.journey
+FROM lines l
+RIGHT JOIN journeys j ON j.line = l.line
+```
+
+**You should see**
+
+```
+line journey_line journey
+IC 1         IC 1      j1
+IC 1         IC 1      j2
+ S 3          S 3      j3
+             S 99      j4
+```
+
+**What it means** The mirror image. Every row of the right table (`journeys`) is kept. j4 is back, with an empty `line` because S 99 is not in `lines`. S 15 is gone. In practice people write the table they want to keep on the left and use LEFT JOIN, RIGHT JOIN is rare.
+
+### Step A.5 FULL OUTER JOIN
+
+**Run this cell**
+
+```sql
+SELECT l.line, j.line AS journey_line, j.journey
+FROM lines l
+FULL OUTER JOIN journeys j ON j.line = l.line
+```
+
+**You should see**
+
+```
+line journey_line journey
+IC 1         IC 1      j1
+IC 1         IC 1      j2
+S 15
+ S 3          S 3      j3
+             S 99      j4
+```
+
+**What it means** Everything from both sides. S 15 with no journey, j4 with no line, and the three matches. Useful when you want to find what is missing on either side.
+
+Summary of A.2 to A.5:
+
+| Join | Keeps | Rows here |
+|---|---|---|
+| INNER | only matches | 3 |
+| LEFT | all of the left table, plus matches | 4 |
+| RIGHT | all of the right table, plus matches | 4 |
+| FULL OUTER | all of both | 5 |
+
+### Step A.6 The trap: counting after a LEFT JOIN
+
+**Run this cell**
+
+```sql
+SELECT l.line, COUNT(*) AS count_star, COUNT(j.journey) AS count_journeys
+FROM lines l
+LEFT JOIN journeys j ON j.line = l.line
+GROUP BY l.line
+```
+
+**You should see**
+
+```
+line  count_star  count_journeys
+IC 1           2               2
+S 15           1               0
+ S 3           1               1
+```
+
+**What it means** S 15 has no journeys, but `COUNT(*)` says 1. The LEFT JOIN produced one row for S 15 with an empty journey, and `COUNT(*)` counts rows, empty or not. `COUNT(j.journey)` counts only rows where that column is filled, and says 0. After a LEFT JOIN, count the column from the right table, not `*`.
+
+### Step A.7 On the real data
+
+**Run the last two cells.** The hidden one rebuilds `service_days` from Step 4.2. The visible one is:
+
+```sql
+SELECT r.route_short_name AS route, t.service_id,
+       COUNT(*) AS rows_after_join,
+       COUNT(sd.service_day) AS rows_with_a_day
+FROM trips t
+JOIN routes r ON r.route_id = t.route_id
+LEFT JOIN service_days sd ON sd.service_id = t.service_id
+GROUP BY route, t.service_id
+```
+
+**You should see**
+
+```
+route service_id  rows_after_join  rows_with_a_day
+ IC 1   TAEGLICH               32               32
+IR 75   TAEGLICH               34               34
+ S 15 WOCHENENDE               11                0
+  S 3    WERKTAG               76               76
+  S 5    WERKTAG               76               76
+  S 7   TAEGLICH               80               80
+```
+
+**What it means** Two things to read here. First, IC 1 has 16 trips but 32 rows after the join, because service_days has two days and every trip matches both. That is what "per day" does, and Step 4.3 then groups by day to get 16 and 16. Second, S 15 survives the LEFT JOIN with its 11 trips, but not one of them has a day. With the plain `JOIN` of Step 4.3 these 11 rows vanish, which is right: the question is per day, and S 15 has no day in this data.
+
+**Check** Step 4.3 uses `JOIN service_days`. What would the result look like with `LEFT JOIN service_days` and `COUNT(*)`?

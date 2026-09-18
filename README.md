@@ -35,7 +35,7 @@ git fetch origin && git merge origin/feat/day-three   # the re-published feed
 
 ```
 raw/         the GTFS slice. Small, synthetic, in the shape of the real feed. Never edited by hand.
-notebooks/   01_first_look.py is the tutorial notebook. 00_* is the hidden-state pair. 02_* and 09_* are lecturer only.
+notebooks/   01_first_look.py is the tutorial notebook, 03_joins.py its appendix on joins. 00_* is the hidden-state pair. 02_* and 09_* are lecturer only.
 dbt/         the same query as a model DAG with tests. dbt/demo/ holds the deliberately wrong grain.
 tools/       build_slice.py regenerates raw/. prepare_full_feed.py fetches the real feed (lecturer).
 CLAUDE.md    the three rules of this feed, as context for any coding assistant.
